@@ -47,8 +47,7 @@ random_mle_list(size_t nv, size_t degree)
     list.reserve(degree);
     for (auto &eval_vec : multiplicands)
     {
-        list.push_back(make_shared<DenseMultilinearExtension<F>>(
-            DenseMultilinearExtension<F>(nv, move(eval_vec))));
+        list.push_back(make_shared<DenseMultilinearExtension<F>>(nv, move(eval_vec)));
     }
     return {list, sum};
 }
@@ -59,12 +58,12 @@ vector<shared_ptr<DenseMultilinearExtension<F>>>
 random_zero_mle_list(size_t nv, size_t degree)
 {
     vector<vector<F>> multiplicands(degree);
-    for (auto&  vec : multiplicands)
+    for (auto &vec : multiplicands)
     {
         vec.reserve(1 << nv);
     }
 
-    for (size_t i = 0; i < (1UL<<nv); ++i)
+    for (size_t i = 0; i < (1UL << nv); ++i)
     {
         // MLE_1=0
         multiplicands[0].push_back(F::zero());
@@ -79,8 +78,7 @@ random_zero_mle_list(size_t nv, size_t degree)
     list.reserve(degree);
     for (auto &eval_vec : multiplicands)
     {
-        list.push_back(make_shared<DenseMultilinearExtension<F>>(
-            DenseMultilinearExtension<F>(nv, move(eval_vec))));
+        list.push_back(make_shared<DenseMultilinearExtension<F>>(nv, move(eval_vec)));
     }
 
     return list;
@@ -120,8 +118,7 @@ identity_permutation_mles(size_t num_vars, size_t num_chunks)
             s_id_vec.push_back(F::from(j));
         }
 
-        res.push_back(std::make_shared<DenseMultilinearExtension<F>>(
-            DenseMultilinearExtension<F>::from_evaluations_vec(num_vars, move(s_id_vec))));
+        res.push_back(std::make_shared<DenseMultilinearExtension<F>>(num_vars, move(s_id_vec)));
     }
 
     return res;
@@ -158,134 +155,140 @@ template <typename F, typename R>
 vector<shared_ptr<DenseMultilinearExtension<F>>>
 random_permutation_mles(size_t num_vars, size_t num_chunks, R &rng)
 {
-    vector<F> s_perm_vec=random_permutation<F>(num_vars,num_chunks,rng);
+    vector<F> s_perm_vec = random_permutation<F>(num_vars, num_chunks, rng);
     vector<shared_ptr<DenseMultilinearExtension<F>>> res;
     res.reserve(num_chunks);
 
-    size_t n=1ULL<<num_vars;
-    for(size_t i=0;i<num_chunks;++i){
+    size_t n = 1ULL << num_vars;
+    for (size_t i = 0; i < num_chunks; ++i)
+    {
         vector<F> chunk_evaluations(
-            s_perm_vec.begin()+i*n,
-            s_perm_vec.begin()+i*n+n
-        );
-        res.push_back(make_shared<DenseMultilinearExtension<F>>(
-            DenseMultilinearExtension<F>::from_evaluation_vec(num_vars,move(chunk_evaluations))
-        ));
+            s_perm_vec.begin() + i * n,
+            s_perm_vec.begin() + i * n + n);
+        res.push_back(make_shared<DenseMultilinearExtension<F>>(num_vars, move(chunk_evaluations)));
     }
     return res;
 }
 
 // 计算MLE(partial_point,rest_var)
-template<typename F>
+template <typename F>
 DenseMultilinearExtension<F> fix_variables_no_par(
     const DenseMultilinearExtension<F> &poly,
-    const vector<F> &partial_point
-){
-    assert(partial_point.size()<=poly.num_vars()&& 
+    const vector<F> &partial_point)
+{
+    assert(partial_point.size() <= poly.num_vars() &&
            "invalid size of partial point");
-    
-    size_t nv=poly.num_vars();
-    vector<F> poly_evals=poly.get_evaluations();
-    size_t dim=partial_point.size();
 
-    for(size_t i=1;i<=dim;++i){
-        const F& r=partial_point[i-1];
-        for(size_t b=0;b<(1ULL<<(nv-i));++b){
-            poly_evals[b]=poly_evals[b<<1]+(poly_evals[(b<<1)+1]-poly_evals[b<<1])*r;
+    size_t nv = poly.num_vars();
+    vector<F> poly_evals = poly.get_evaluations();
+    size_t dim = partial_point.size();
+
+    for (size_t i = 1; i <= dim; ++i)
+    {
+        const F &r = partial_point[i - 1];
+        for (size_t b = 0; b < (1ULL << (nv - i)); ++b)
+        {
+            poly_evals[b] = poly_evals[b << 1] + (poly_evals[(b << 1) + 1] - poly_evals[b << 1]) * r;
         }
     }
 
     return DenseMultilinearExtension<F>(
         nv - dim,
-        std::vector<F>(poly_evals.begin(), poly_evals.begin() + (1ULL << (nv - dim)))
-    );
+        std::vector<F>(poly_evals.begin(), poly_evals.begin() + (1ULL << (nv - dim))));
 }
 // 固定所有变量:MLE(point)
-template<typename F>
+template <typename F>
 F evaluation_no_par(
-    const DenseMultilinearExtension<F>& poly,
-    const vector<F>& point
-){
-    assert(poly.num_vars() == point.size() && 
-        "Number of variables must match point dimension");
-    
+    const DenseMultilinearExtension<F> &poly,
+    const vector<F> &point)
+{
+    assert(poly.num_vars() == point.size() &&
+           "Number of variables must match point dimension");
+
     return fix_variables_no_par(poly, point).evaluations[0];
 }
 
 // 合并多个MLE，将多个MLE的求值列表直接拼接即可（若需要则补零）
-template<typename F>
+template <typename F>
 shared_ptr<DenseMultilinearExtension<F>> merge_polynomial(
-    const vector<shared_ptr<DenseMultilinearExtension<F>>>& polynomials
-){
-    size_t nv=polynomials[0].num_vars();
-    for(const auto& poly:polynomials){
-        if(nv!=poly.num_vars()){
+    const vector<shared_ptr<DenseMultilinearExtension<F>>> &polynomials)
+{
+    size_t nv = polynomials[0].num_vars();
+    for (const auto &poly : polynomials)
+    {
+        if (nv != poly.num_vars())
+        {
             throw invalid_argument("num_vars do not match for polynomials");
         }
     }
     // 计算合并后的变量数量
-    size_t merge_nv=get_batched_nv(nv,polynomials.size());
+    size_t merge_nv = get_batched_nv(nv, polynomials.size());
     // 收集所有多项式的评估值
     vector<F> scalars;
     // 计算总大小
-    size_t total_size=0;
-    for(const auto& poly:polynomials){
-        total_size+=poly.to_evaluations().size();
+    size_t total_size = 0;
+    for (const auto &poly : polynomials)
+    {
+        total_size += poly.to_evaluations().size();
     }
     scalars.reserve(total_size);
 
     // 合并所有评估值
-    for(const auto& poly:polynomials){
-        const auto& evals=poly.to_evaluations();
-        scalars.insert(scalars.end(),evals.begin(),evals.end());
+    for (const auto &poly : polynomials)
+    {
+        const auto &evals = poly.to_evaluations();
+        scalars.insert(scalars.end(), evals.begin(), evals.end());
     }
     // 用0填充到目标大小
-    size_t target_size=1ULL<<merge_nv;
-    if(scalars.size()<target_size){
-        scalars.resize(target_size,F::zero());
+    size_t target_size = 1ULL << merge_nv;
+    if (scalars.size() < target_size)
+    {
+        scalars.resize(target_size, F::zero());
     }
 
     return make_shared<DenseMultilinearExtension<F>>(
-        DenseMultilinearExtension<F>::from_evaluations_vec(merge_nv,move(scalars))
-    );
+        DenseMultilinearExtension<F>::from_evaluations_vec(merge_nv, move(scalars)));
 }
 
-//从后往前固定变量
-template<typename F>
+// 从后往前固定变量
+template <typename F>
 DenseMultilinearExtension<F> fix_last_variable_no_par(
-    const DenseMultilinearExtension<F>& poly,
-    const F& partial_point
-){
-    size_t nv=poly.num_vars();
+    const DenseMultilinearExtension<F> &poly,
+    const F &partial_point)
+{
+    size_t nv = poly.num_vars();
     assert(nv > 0 && "Cannot fix variable from 0-variable polynomial");
 
     // 固定一个变量后，评估点列表长度减半
-    size_t half_len=1ULL<<(nv-1);
+    size_t half_len = 1ULL << (nv - 1);
     vector<F> res;
     res.reserve(half_len);
 
-    const auto& evaluations=poly.get_evaluations();
-    for(size_t i=0;i<half_len;++i){
-        F val=evaluations[i]+partial_point*(evaluations[i+half_len]-evaluations[i]);
+    const auto &evaluations = poly.get_evaluations();
+    for (size_t i = 0; i < half_len; ++i)
+    {
+        F val = evaluations[i] + partial_point * (evaluations[i + half_len] - evaluations[i]);
         res.push_back(move(val));
     }
-    
-    return DenseMultilinearExtension<F>::from_evaluations_vec(nv-1,move(res));
+
+    return DenseMultilinearExtension<F>::from_evaluations_vec(nv - 1, move(res));
 }
 
-template<typename F>
+template <typename F>
 DenseMultilinearExtension<F> fix_last_variables_no_par(
-    const DenseMultilinearExtension<F>& poly,
-    const vector<F>& partial_point
-){
-    if(partial_point.empty()){
+    const DenseMultilinearExtension<F> &poly,
+    const vector<F> &partial_point)
+{
+    if (partial_point.empty())
+    {
         return poly;
     }
     // 从最后一个变量开始固定
-    auto res =fix_last_variable_no_par(poly,partial_point.back());
-    
-    for(auto it=partial_point.rbegin()+1;it!=partial_point.rend();++it){
-        res=fix_last_variable_no_par(res,*it);
+    auto res = fix_last_variable_no_par(poly, partial_point.back());
+
+    for (auto it = partial_point.rbegin() + 1; it != partial_point.rend(); ++it)
+    {
+        res = fix_last_variable_no_par(res, *it);
     }
     return res;
 }

@@ -6,9 +6,9 @@
 #include <vector>
 #include <memory>
 #include <utility>
-#include<random>
+#include <random>
 
-#include"field_and_polynomial/temp.h"
+#include "field_and_polynomial/temp.h"
 #include "multilinear_polynomial.h"
 #include "util.h"
 
@@ -65,23 +65,27 @@ public:
         return poly;
     }
 
-    void printproduct(){
+    void printproduct()
+    {
         // 输出products的内容
         std::cout << "Products (" << products.size() << " items):" << std::endl;
-        for (size_t i = 0; i < products.size(); ++i) {
-            const auto& product = products[i];
+        for (size_t i = 0; i < products.size(); ++i)
+        {
+            const auto &product = products[i];
             std::cout << "Item " << i << ": coefficient = ";
             product.first.print();
-            
+
             std::cout << ", indices = [";
-            for (size_t j = 0; j < product.second.size(); ++j) {
+            for (size_t j = 0; j < product.second.size(); ++j)
+            {
                 std::cout << product.second[j];
-                if (j < product.second.size() - 1) {
+                if (j < product.second.size() - 1)
+                {
                     std::cout << ", ";
                 }
             }
             std::cout << "]" << std::endl;
-}
+        }
     }
     // 添加形为 coe * MLE1 * MLE2 * ... * MLEn的乘积项
     void add_mle_list(
@@ -177,7 +181,7 @@ public:
         // 先计算每个mle在point上的值
         for (shared_ptr<DenseMultilinearExtension<F>> ext : flattened_ml_extensions)
         {
-            evals.push_back((*ext).evaluate(point).value());
+            evals.push_back((*ext).evaluate(point));
         }
 
         F result = F::zero();
@@ -199,14 +203,14 @@ public:
     pair<VirtualPolynomial, F> rand(
         size_t nv,
         pair<size_t, size_t> num_multiplicands_range,
-        size_t num_products
-    ){
+        size_t num_products)
+    {
         VirtualPolynomial poly(nv);
         F sum = F ::zero();
 
         // gen是一个使用rd()作种子初始化的标准梅森旋转算法的随机数发生器
         random_device rd;
-        mt19937 gen(rd()); 
+        mt19937 gen(rd());
         // 随机数生成器
         uniform_int_distribution<size_t> dist(
             num_multiplicands_range.first,
@@ -227,18 +231,17 @@ public:
     }
 
     // 生成和为0的随机虚拟多项式
-   
+
     VirtualPolynomial rand_zero(
         size_t nv,
         pair<size_t, size_t> num_multiplicands_range,
-        size_t num_products
-    ){
+        size_t num_products)
+    {
         VirtualPolynomial poly(nv);
 
-        
         // gen是一个使用rd()作种子初始化的标准梅森旋转算法的随机数发生器
         random_device rd;
-        mt19937 gen(rd()); 
+        mt19937 gen(rd());
 
         uniform_int_distribution<size_t> dist(
             num_multiplicands_range.first,
@@ -257,41 +260,49 @@ public:
     }
 
     // 用于测试
-    void print_evals(){
-        if(aux_info.num_variables>5){
-             throw std::runtime_error(
-                "this function is used for testing only. cannot print more than 5 num_vars"
-            );
+    void print_evals()
+    {
+        if (aux_info.num_variables > 5)
+        {
+            throw std::runtime_error(
+                "this function is used for testing only. cannot print more than 5 num_vars");
         }
 
-        for(size_t i=0;i<(1ULL<<aux_info.num_variables);++i){
-            auto point=bit_decompose(i,aux_info.num_variables);
+        for (size_t i = 0; i < (1ULL << aux_info.num_variables); ++i)
+        {
+            auto point = bit_decompose(i, aux_info.num_variables);
             vector<F> point_fr;
             point_fr.reserve(point.size());
-            for(bool bit:point){
+            for (bool bit : point)
+            {
                 point_fr.push_back(F::from(bit));
             }
-            cout<<i<<" "<<evaluate(point_fr)<<endl;
+            cout << i << " " << evaluate(point_fr) << endl;
         }
-        cout<<endl;
+        cout << endl;
     }
 };
 
-template<typename F>
+template <typename F>
 void build_eq_x_r_helper(
-    const vector<F>& r,
-    vector<F>& buf
-){
+    const vector<F> &r,
+    vector<F> &buf)
+{
     // r为空，则抛出错误
-    if(r.empty()){
+    if (r.empty())
+    {
         throw;
-    }else if(r.size()==1){
+    }
+    else if (r.size() == 1)
+    {
         buf.clear();
-        buf.push_back(F::one()-r[0]);
+        buf.push_back(F::one() - r[0]);
         buf.push_back(r[0]);
-    }else{
-        vector<F> sub_r(r.begin()+1,r.end());
-        build_eq_x_r_helper(sub_r,buf);
+    }
+    else
+    {
+        vector<F> sub_r(r.begin() + 1, r.end());
+        build_eq_x_r_helper(sub_r, buf);
 
         // suppose at the previous step we received [b_1, ..., b_k]
         // for the current step we will need
@@ -304,19 +315,21 @@ void build_eq_x_r_helper(
         //     res.push(tmp);
         // }
         // *buf = res;
-        vector<F> res(buf.size()*2);
+        vector<F> res(buf.size() * 2);
 
-        for(size_t i=0;i<buf.size();++i){
-            F tmp=r[0]*buf[i];
-            res[2*i]=buf[i]-tmp;
-            res[2*i+1]=tmp;
+        for (size_t i = 0; i < buf.size(); ++i)
+        {
+            F tmp = r[0] * buf[i];
+            res[2 * i] = buf[i] - tmp;
+            res[2 * i + 1] = tmp;
         }
-        buf=move(res);
+        buf = move(res);
     }
 }
 
-template<typename F>
-vector<F> build_eq_x_r_vec(const vector<F>& r){
+template <typename F>
+vector<F> build_eq_x_r_vec(const vector<F> &r)
+{
     // we build eq(x,r) from its evaluations
     // we want to evaluate eq(x,r) over x \in {0, 1}^num_vars
     // for example, with num_vars = 4, x is a binary vector of 4, then
@@ -327,13 +340,14 @@ vector<F> build_eq_x_r_vec(const vector<F>& r){
     //  ....
     //  1 1 1 1 -> r0       * r1        * r2        * r3
     // we will need 2^num_var evaluations
-    
+
     // r为空，则抛出错误
-    if(r.empty()){
+    if (r.empty())
+    {
         throw;
     }
     vector<F> eval;
-    build_eq_x_r_helper(r,eval);
+    build_eq_x_r_helper(r, eval);
     return eval;
 }
 /// This function build the eq(x, r) polynomial for any given r.
@@ -342,49 +356,49 @@ vector<F> build_eq_x_r_vec(const vector<F>& r){
 ///      eq(x,y) = \prod_i=1^num_var (x_i * y_i + (1-x_i)*(1-y_i))
 /// over r, which is
 ///      eq(x,y) = \prod_i=1^num_var (x_i * r_i + (1-x_i)*(1-r_i))
-template<typename F>
-shared_ptr<DenseMultilinearExtension<F>> build_eq_x_r(const vector<F>& r){
-    auto evals=build_eq_x_r_vec<F>(r);
-    return make_shared<DenseMultilinearExtension<F>>(
-        DenseMultilinearExtension<F>(r.size(),move(evals))
-    );
+template <typename F>
+shared_ptr<DenseMultilinearExtension<F>> build_eq_x_r(const vector<F> &r)
+{
+    auto evals = build_eq_x_r_vec<F>(r);
+    return make_shared<DenseMultilinearExtension<F>>(r.size(), move(evals));
 }
 
 // 计算 \hat f(x) = \sum_{x_i \in eval_x} f(x_i) eq(x,r)
-template<typename F>
+template <typename F>
 VirtualPolynomial<F> build_f_hat(
-    const VirtualPolynomial<F>& poly,
-    const vector<F>& r
-){
+    const VirtualPolynomial<F> &poly,
+    const vector<F> &r)
+{
     // 变量不相等则抛出错误
-    if (poly.aux_info.num_variables!=r.size()){
-        throw; 
-    }
-    auto eq_x_r=build_eq_x_r<F>(r);
-    VirtualPolynomial<F> res=poly;
-    res.mul_by_mle(eq_x_r,F::one());
-    
-    return res;
-}
-
-
-// 计算 eq(x,y)=\prod (x_i * y_i + (1-x_i) * (1-y_i))
-template<typename F>
-F eq_eval(
-    const vector<F>& x,
-    const vector<F>& y
-){
-    // 两个向量长度不相等，抛出错误
-    if(x.size()!=y.size()){
+    if (poly.aux_info.num_variables != r.size())
+    {
         throw;
     }
-    F res =F::one();
-    for(size_t i=0;i<x.size();++i){
-        F xi_yi=x[i]*y[i];
-        res=res*(F::one()+xi_yi+xi_yi-x[i]-y[i]);
-    }
+    auto eq_x_r = build_eq_x_r<F>(r);
+    VirtualPolynomial<F> res = poly;
+    res.mul_by_mle(eq_x_r, F::one());
+
     return res;
 }
 
+// 计算 eq(x,y)=\prod (x_i * y_i + (1-x_i) * (1-y_i))
+template <typename F>
+F eq_eval(
+    const vector<F> &x,
+    const vector<F> &y)
+{
+    // 两个向量长度不相等，抛出错误
+    if (x.size() != y.size())
+    {
+        throw;
+    }
+    F res = F::one();
+    for (size_t i = 0; i < x.size(); ++i)
+    {
+        F xi_yi = x[i] * y[i];
+        res = res * (F::one() + xi_yi + xi_yi - x[i] - y[i]);
+    }
+    return res;
+}
 
 #endif // VIRTUAL_POLYNOMIAL_H
