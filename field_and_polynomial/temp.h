@@ -6,6 +6,7 @@
 #include <vector>
 #include <cassert>
 #include <memory>
+#include <libff/common/utils.hpp> 
 
 using namespace std;
 // 假设的类型和函数声明
@@ -52,6 +53,15 @@ public:
     size_t num_vars() const { return num_vars_; }
 
     const vector<F> &get_evaluations() const { return evaluations_; }
+
+    DenseMultilinearExtension<F> rand(size_t num_var){
+        vector<F> evals;
+        evals.reserve(1ULL<<num_var);
+        for(size_t i=0;i<(1ULL<<num_var);++i){
+            evals.push_back(libff::random_element_non_zero<F>());
+        }
+        return DenseMultilinearExtension<F>(num_var,evals);
+    }
 
     /*
         DenseMultilinearExtension<F> from_evaluations_slice(
