@@ -76,23 +76,48 @@ tuple<size_t, size_t, bool> get_index(size_t i, size_t num_vars)
 {
     vector<bool> bit_sequence = bit_decompose(static_cast<uint64_t>(i), num_vars);
 
-    // 构建 base_bits: bit_sequence[0..num_vars-2] (去掉最后一个bit)
-    vector<bool> base_bits(bit_sequence.begin() + 1, bit_sequence.end());
+    /*    
+    for(size_t i=0;i<bit_sequence.size();++i){
+        cout<<bit_sequence[i];
+    }
+    cout<<endl;
+    */
+    // 构建 base_bits: bit_sequence[1..num_vars-1] (去掉第一个bit)
+    vector<bool> base_bits(bit_sequence.begin(), bit_sequence.end()-1);
 
+    /*
+    for(auto e:base_bits){
+        cout<<e;
+    }
+    cout<<endl;
+    */
+    
     // 构建 x0_bits
     vector<bool> x0_bits = base_bits;
-    x0_bits.push_back(false);
+    x0_bits.insert(x0_bits.begin(),false);
 
+    /*
+    for(auto e:x0_bits){
+        cout<<e;
+    }
+    cout<<endl;
+    */
     // 构建 x1_bits
     vector<bool> x1_bits = base_bits;
-    x1_bits.push_back(true);
-
+    x1_bits.insert(x1_bits.begin(),true);
+    /*
+    for(auto e:x1_bits){
+        cout<<e;
+    }
+    cout<<endl;
+    */
     size_t x0 = static_cast<size_t>(project(x0_bits));
     size_t x1 = static_cast<size_t>(project(x1_bits));
-    bool sign = bit_sequence[0];
+    bool sign = bit_sequence[num_vars-1];
 
     return make_tuple(x0, x1, sign);
 }
+
 
 /*
 // Input index

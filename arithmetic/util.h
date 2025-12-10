@@ -27,6 +27,6 @@ uint64_t project(const std::vector<bool> &input);
 /// - `x0 := (i_1, ..., i_{n-1}, 0)`
 /// - `x1 := (i_1, ..., i_{n-1}, 1)`
 /// - `sign := i_0`
-std::tuple<size_t, size_t, bool> get_index(size_t i, size_t num_vars);
+tuple<size_t, size_t, bool> get_index(size_t i, size_t num_vars);
 
 #endif // UTIL_H
