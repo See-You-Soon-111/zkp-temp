@@ -54,7 +54,7 @@ public:
     {
         VirtualPolynomial poly;
         poly.aux_info.max_degree = 1;
-        poly.aux_info.num_variables = mle.num_vars();
+        poly.aux_info.num_variables = (*mle).num_vars();
 
         // 待完善，获取mle指针
         auto mle_ptr = mle.get();
@@ -106,7 +106,7 @@ public:
         for (shared_ptr<DenseMultilinearExtension<F>> mle : mle_list)
         {
             // 变量不等则抛出错误
-            if (mle->num_vars() != aux_info.num_variables)
+            if ((*mle).num_vars() != aux_info.num_variables)
             {
                 throw;
             }
