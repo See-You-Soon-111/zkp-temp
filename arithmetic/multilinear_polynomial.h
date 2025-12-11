@@ -94,7 +94,7 @@ vector<F> identity_permutation(size_t num_var, size_t num_chunks)
 
     for (size_t i = 0; i < len; ++i)
     {
-        result.push_back(F::from(i));
+        result.push_back(F(i));
     }
     return result;
 }
@@ -109,24 +109,24 @@ identity_permutation_mles(size_t num_vars, size_t num_chunks)
     for (size_t i = 0; i < num_chunks; ++i)
     {
         uint64_t shift = i * (1ULL << num_vars);
-        std::vector<F> s_id_vec;
+        vector<F> s_id_vec;
         s_id_vec.reserve(1ULL << num_vars);
 
         // 生成从 shift 到 shift + 2^num_vars - 1 的序列
         for (uint64_t j = shift; j < shift + (1ULL << num_vars); ++j)
         {
-            s_id_vec.push_back(F::from(j));
+            s_id_vec.push_back(F(j));
         }
 
-        res.push_back(std::make_shared<DenseMultilinearExtension<F>>(num_vars, move(s_id_vec)));
+        res.push_back(make_shared<DenseMultilinearExtension<F>>(num_vars, move(s_id_vec)));
     }
 
     return res;
 }
 
 // 代表随机置换的多项式
-template <typename F, typename R>
-vector<F> random_permutation(size_t num_vars, size_t num_chunks, R &rng)
+template <typename F>
+vector<F> random_permutation(size_t num_vars, size_t num_chunks)
 {
     size_t len = num_chunks * (1ULL << num_vars);
     vector<F> s_id_vec;
@@ -134,28 +134,29 @@ vector<F> random_permutation(size_t num_vars, size_t num_chunks, R &rng)
     // 创建恒等置换[0,1,2,...,len-1]
     for (size_t i = 0; i < len; ++i)
     {
-        s_id_vec.push_back(F::from(i));
+        s_id_vec.push_back(F(i));
     }
     // 随机打乱排序
     vector<F> s_perm_vec;
     s_perm_vec.reserve(len);
-
     // 洗牌
     for (size_t i = len; i > 0; --i)
-    {
-        std::uniform_int_distribution<size_t> dist(0, s_id_vec.size() - 1);
-        size_t index = dist(rng);
-        s_perm_vec.push_back(std::move(s_id_vec[index]));
+    {   
+        random_device rd;
+        mt19937 gen(rd());
+        uniform_int_distribution<size_t> dist(0, s_id_vec.size() - 1);
+        size_t index = dist(gen);
+        s_perm_vec.push_back(move(s_id_vec[index]));
         s_id_vec.erase(s_id_vec.begin() + index);
     }
     return s_perm_vec;
 }
 
-template <typename F, typename R>
+template <typename F>
 vector<shared_ptr<DenseMultilinearExtension<F>>>
-random_permutation_mles(size_t num_vars, size_t num_chunks, R &rng)
+random_permutation_mles(size_t num_vars, size_t num_chunks)
 {
-    vector<F> s_perm_vec = random_permutation<F>(num_vars, num_chunks, rng);
+    vector<F> s_perm_vec = random_permutation<F>(num_vars, num_chunks);
     vector<shared_ptr<DenseMultilinearExtension<F>>> res;
     res.reserve(num_chunks);
 
